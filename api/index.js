@@ -96,13 +96,19 @@ app.get('/api/messages', async (req, res) => {
 });
 
 app.post('/api/messages', async (req, res) => {
+  console.log('POST /api/messages called');
+  console.log('Request body:', req.body);
+  console.log('Content-Type:', req.headers['content-type']);
+  
   const { content } = req.body;
   
   if (!content || content.trim().length === 0) {
+    console.log('Error: Message content is required');
     return res.status(400).json({ error: 'Message content is required' });
   }
   
   if (content.length > 280) {
+    console.log('Error: Message too long');
     return res.status(400).json({ error: 'Message too long (max 280 characters)' });
   }
   
@@ -110,24 +116,29 @@ app.post('/api/messages', async (req, res) => {
     // Define available colors for notes
     const colors = ['yellow', 'orange', 'green', 'blue', 'pink', 'purple'];
     
+    console.log('Using database?', !!pool);
+    
     if (pool) {
+      console.log('Attempting database insertion...');
       // For database: get the count of existing messages to determine next color
       const countResult = await pool.query('SELECT COUNT(*) FROM messages');
       const messageCount = parseInt(countResult.rows[0].count);
       const colorIndex = messageCount % colors.length;
       const noteColor = colors[colorIndex];
       
+      console.log('Inserting message with color:', noteColor);
       const result = await pool.query(
         'INSERT INTO messages (content, color) VALUES ($1, $2) RETURNING id, content, created_at, color',
         [content.trim(), noteColor]
       );
+      console.log('Database insertion successful:', result.rows[0]);
       res.status(201).json(result.rows[0]);
     } else {
+      console.log('Using in-memory storage...');
       // Use in-memory storage  
       const colorIndex = colorCounter % colors.length;
       const noteColor = colors[colorIndex];
       colorCounter++; // Increment for next message
-      
       
       const newMessage = {
         id: nextId++,
@@ -137,11 +148,13 @@ app.post('/api/messages', async (req, res) => {
         color: noteColor
       };
       messages.unshift(newMessage);
+      console.log('In-memory insertion successful:', newMessage);
       res.status(201).json(newMessage);
     }
   } catch (error) {
     console.error('Error creating message:', error);
-    res.status(500).json({ error: 'Failed to create message' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ error: 'Failed to create message', details: error.message });
   }
 });
 
