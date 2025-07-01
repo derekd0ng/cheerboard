@@ -1,5 +1,3 @@
-import fs from 'fs';
-import path from 'path';
 import pg from 'pg';
 import dotenv from 'dotenv';
 
@@ -7,10 +5,13 @@ dotenv.config();
 
 const { Pool } = pg;
 
-async function initializeDatabase() {
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed. Use POST to initialize database.' });
+  }
+
   if (!process.env.DATABASE_URL) {
-    console.error('DATABASE_URL environment variable is required');
-    process.exit(1);
+    return res.status(400).json({ error: 'DATABASE_URL environment variable is required' });
   }
 
   const pool = new Pool({
@@ -23,12 +24,33 @@ async function initializeDatabase() {
   try {
     console.log('Connecting to Neon PostgreSQL database...');
     
-    // Read and execute schema
-    const schemaPath = path.join(process.cwd(), 'schema.sql');
-    const schema = fs.readFileSync(schemaPath, 'utf8');
-    
+    // Create tables
     console.log('Creating tables...');
-    await pool.query(schema);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        color VARCHAR(20) DEFAULT 'yellow'
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS reactions (
+        id SERIAL PRIMARY KEY,
+        message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+        reaction_type VARCHAR(20) NOT NULL CHECK (reaction_type IN ('heart', 'star', 'plus', 'blessed')),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_reactions_message_id ON reactions(message_id);
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_reactions_type ON reactions(message_id, reaction_type);
+    `);
     
     // Check if we need to add sample data
     const result = await pool.query('SELECT COUNT(*) FROM messages');
@@ -62,14 +84,19 @@ async function initializeDatabase() {
     }
     
     console.log('Database initialization completed successfully!');
+    res.json({ 
+      success: true, 
+      message: 'Database initialized successfully',
+      messagesCount: messageCount + (messageCount === 0 ? 3 : 0)
+    });
     
   } catch (error) {
     console.error('Database initialization failed:', error);
-    process.exit(1);
+    res.status(500).json({ 
+      error: 'Database initialization failed', 
+      details: error.message 
+    });
   } finally {
     await pool.end();
   }
 }
-
-// Run initialization
-initializeDatabase();
