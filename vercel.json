@@ -2,8 +2,11 @@
   "version": 2,
   "builds": [
     {
-      "src": "client/dist/**",
-      "use": "@vercel/static"
+      "src": "client/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     },
     {
       "src": "api/index.js",
@@ -19,5 +22,13 @@
       "src": "/(.*)",
       "dest": "/client/dist/$1"
     }
-  ]
+  ],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  }
 }

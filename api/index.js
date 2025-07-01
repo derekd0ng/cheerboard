@@ -21,13 +21,36 @@ let colorCounter = 3; // Start after the 3 existing messages (yellow=0, orange=1
 // In-memory reactions storage
 let reactions = {}; // messageId -> { reactionType -> count }
 
-// Database connection (optional for local development)
+// Database connection - prioritize Neon PostgreSQL for production
 let pool;
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 if (process.env.DATABASE_URL) {
   pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: {
+      rejectUnauthorized: false
+    },
+    // Neon-specific connection settings
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
   });
+  
+  // Test database connection on startup
+  pool.connect((err, client, release) => {
+    if (err) {
+      console.error('Error acquiring client', err.stack);
+    } else {
+      console.log('Successfully connected to Neon PostgreSQL database');
+      release();
+    }
+  });
+} else if (isDevelopment) {
+  console.log('DATABASE_URL not found, using in-memory storage for development');
+} else {
+  console.error('DATABASE_URL is required for production deployment');
+  process.exit(1);
 }
 
 app.use(cors());

@@ -6,13 +6,17 @@
     "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
     "dev:client": "cd client && npm run dev",
     "dev:server": "cd api && npm run dev",
-    "build": "cd client && npm run build",
+    "build": "cd client && npm run build && cd ../api && npm run build",
     "start": "cd api && npm start",
     "install:client": "cd client && npm install",
     "install:server": "cd api && npm install",
-    "install:all": "npm run install:client && npm run install:server"
+    "install:all": "npm run install:client && npm run install:server",
+    "vercel-build": "cd client && npm ci && npm run build",
+    "init-db": "cd api && npm run init-db",
+    "test-deployment": "node test-deployment.js"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "node-fetch": "^3.3.2"
   }
 }
