@@ -234,10 +234,16 @@ app.delete('/api/messages/:id', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-  console.log(`Database mode: ${pool ? 'enabled' : 'disabled (using in-memory storage)'}`);
-  if (!pool) {
-    console.log('Initial messages loaded:', messages.map(m => ({id: m.id, color: m.color})));
-  }
-});
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+    console.log(`Database mode: ${pool ? 'enabled' : 'disabled (using in-memory storage)'}`);
+    if (!pool) {
+      console.log('Initial messages loaded:', messages.map(m => ({id: m.id, color: m.color})));
+    }
+  });
+}
+
+// Export for Vercel serverless functions
+export default app;
