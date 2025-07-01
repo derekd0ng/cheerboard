@@ -19,6 +19,7 @@ body {
   min-height: 100vh;
   padding: 0;
   margin: 0;
+  overflow-x: hidden;
 }
 
 /* Fixed header in top-left */
@@ -39,13 +40,100 @@ body {
   transition: all 0.2s ease;
 }
 
+/* Vent tab styling - swap colors */
+/* Vent tab header (logo) - black background */
+body.vent-mode .header {
+  background: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.vent-mode .header:hover {
+  background: rgba(0, 0, 0, 0.9) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.vent-mode .header h1 {
+  color: #fff !important;
+}
+
+/* Vent tab button - light background like cheer logo */
+body.vent-mode .tab-switch {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #000 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.vent-mode .tab-switch:hover {
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
 .header:hover {
   background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
+/* Tab switch button - symmetrical to header */
+.tab-switch {
+  position: fixed;
+  top: 1.5rem;
+  right: 0;
+  z-index: 100;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px 0 0 8px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: none;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  min-width: 80px;
+}
+
+
+.tab-switch:hover {
+  background: rgba(0, 0, 0, 0.9);
+  border-color: rgba(139, 0, 0, 0.7);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(139, 0, 0, 0.3),
+    0 0 12px rgba(139, 0, 0, 0.4),
+    0 0 20px rgba(139, 0, 0, 0.2);
+}
+
+/* Vent tab button - bright white glow */
+body.vent-mode .tab-switch:hover {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 
+    0 4px 12px rgba(255, 255, 255, 0.8) !important, 
+    0 0 40px rgba(255, 255, 255, 1) !important, 
+    0 0 80px rgba(255, 255, 255, 0.8) !important,
+    0 0 120px rgba(255, 255, 255, 0.6) !important;
+}
+
 .header h1 {
   color: #000;
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1;
+}
+
+.tab-switch h1 {
+  color: #fff;
   margin: 0;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 1rem;
@@ -62,14 +150,37 @@ body {
 .content {
   width: 90vw;
   margin: 5rem auto 2rem auto;
-  padding: 3rem;
-  background: rgba(240, 248, 243, 0.8);
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 24px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
   position: relative;
   overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Tab slide animations - unidirectional left-to-right */
+
+/* ANY tab slides out LEFT (current page always exits left) */
+.slide-cheer-to-vent,
+.slide-vent-to-cheer {
+  transform: translateX(-100vw);
+}
+
+/* Position new content off-screen right (no animation yet) */
+.slide-slide-in.content-vent,
+.slide-slide-in:not(.content-vent) {
+  transform: translateX(100vw) !important;
+  transition: none !important; /* No animation while positioning */
+}
+
+/* Animate new content sliding in from right to center */
+.slide-slide-in-animate.content-vent,
+.slide-slide-in-animate:not(.content-vent) {
+  transform: translateX(0) !important;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .content::before {
@@ -93,7 +204,7 @@ body {
 
 /* Message form */
 .message-form {
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
@@ -546,6 +657,147 @@ body {
   font-size: 1.1rem;
 }
 
+/* Vent tab styling - dark theme */
+.content-vent {
+  background: rgba(20, 20, 20, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.content-vent .message-form {
+  background: rgba(40, 40, 40, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.content-vent .message-form textarea {
+  background: rgba(60, 60, 60, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+}
+
+.content-vent .message-form textarea::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.content-vent .message-form textarea:focus {
+  border-color: rgba(139, 0, 0, 0.9) !important;
+  box-shadow: 0 0 0 2px rgba(139, 0, 0, 0.4) !important;
+}
+
+.content-vent .char-count {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.content-vent .message-form button {
+  background: #8b0000 !important;
+  color: white !important;
+}
+
+.content-vent .message-form button:hover:not(:disabled) {
+  background: #a50000 !important;
+  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.5) !important;
+}
+
+.content-vent .message-form button:disabled {
+  background: #666 !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.vent-area {
+  text-align: center;
+  padding: 2rem 2rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
+.vent-message {
+  font-size: 1.2rem;
+  margin: 0;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    opacity: 0.9;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+  }
+}
+
+/* Disappearing message animation */
+.disappearing-message {
+  background: rgba(139, 0, 0, 0.9);
+  border: 1px solid rgba(139, 0, 0, 0.5);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin: 3rem auto;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: center;
+  width: fit-content;
+  min-width: 200px;
+  max-width: calc(90vw - 4rem);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+.disappearing-message.appearing {
+  animation: message-appear 0.5s ease-out forwards;
+}
+
+.disappearing-message.disappearing {
+  animation: message-dissolve 1.5s ease-in forwards;
+}
+
+@keyframes message-appear {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes message-dissolve {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px);
+    background: rgba(139, 0, 0, 0.9);
+    border-color: rgba(139, 0, 0, 0.5);
+  }
+  30% {
+    opacity: 0.8;
+    transform: scale(1.02);
+    background: rgba(100, 0, 0, 0.8);
+    border-color: rgba(100, 0, 0, 0.4);
+  }
+  70% {
+    opacity: 0.3;
+    transform: scale(0.95);
+    filter: blur(1px);
+    background: rgba(40, 0, 0, 0.6);
+    border-color: rgba(40, 0, 0, 0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8) translateY(-30px);
+    filter: blur(3px);
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Body background override for vent mode */
+body.vent-mode {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+}
+
 /* Scroll to top button */
 .scroll-to-top-button {
   position: fixed;
@@ -595,8 +847,23 @@ body {
     padding: 0.6rem 0.9rem;
   }
   
+  button.header {
+    left: 0;
+    padding: 0.6rem 1.8rem;
+    min-width: 90px;
+  }
+  
   .header h1 {
     font-size: 1.1rem;
+  }
+  
+  .tab-switch {
+    top: 2rem;
+    right: 0;
+    height: 42px; /* Match header height with 0.6rem + 0.9rem padding * 2 */
+    padding: 0.6rem 1.8rem;
+    font-size: 1.1rem;
+    min-width: 90px;
   }
   
   .message-form {
@@ -622,8 +889,23 @@ body {
     padding: 0.7rem 1rem;
   }
   
+  button.header {
+    left: 0;
+    padding: 0.7rem 2rem;
+    min-width: 100px;
+  }
+  
   .header h1 {
     font-size: 1.2rem;
+  }
+  
+  .tab-switch {
+    top: 2.5rem;
+    right: 0;
+    height: 46px; /* Match header height with 0.7rem + 1rem padding * 2 */
+    padding: 0.7rem 2rem;
+    font-size: 1.2rem;
+    min-width: 100px;
   }
   
   .messages {
@@ -652,8 +934,23 @@ body {
     padding: 0.4rem 0.6rem;
   }
   
+  button.header {
+    left: 0;
+    padding: 0.4rem 1.2rem;
+    min-width: 70px;
+  }
+  
   .header h1 {
     font-size: 0.85rem;
+  }
+  
+  .tab-switch {
+    top: 1rem;
+    right: 0;
+    height: 34px; /* Match header height with 0.4rem + 0.6rem padding * 2 */
+    padding: 0.4rem 1.2rem;
+    font-size: 0.85rem;
+    min-width: 70px;
   }
   
   .content {
@@ -698,3 +995,4 @@ body {
     font-size: 0.65rem;
   }
 }
+

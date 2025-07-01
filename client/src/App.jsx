@@ -8,6 +8,11 @@ function App() {
   const [newlyAddedIds, setNewlyAddedIds] = useState(new Set());
   const [userReactions, setUserReactions] = useState(new Map());
   const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const [activeTab, setActiveTab] = useState('cheer'); // 'cheer' or 'vent'
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [slideDirection, setSlideDirection] = useState('');
+  const [ventingMessage, setVentingMessage] = useState('');
+  const [isVenting, setIsVenting] = useState(false);
 
   const API_URL = import.meta.env.PROD ? '/api' : 'http://localhost:3001/api';
 
@@ -28,6 +33,20 @@ function App() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    // Change body class based on active tab
+    if (activeTab === 'vent') {
+      document.body.classList.add('vent-mode');
+    } else {
+      document.body.classList.remove('vent-mode');
+    }
+
+    // Cleanup function to remove class when component unmounts
+    return () => {
+      document.body.classList.remove('vent-mode');
+    };
+  }, [activeTab]);
 
   const fetchMessages = async () => {
     try {
@@ -150,69 +169,195 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleTabSwitch = (newTab) => {
+    if (newTab === activeTab || isTransitioning) return;
+    
+    // Determine slide direction based on current and target tab
+    if (activeTab === 'cheer' && newTab === 'vent') {
+      setSlideDirection('cheer-to-vent'); // Current slides left, new comes from right
+    } else if (activeTab === 'vent' && newTab === 'cheer') {
+      setSlideDirection('vent-to-cheer'); // Current slides right, new comes from left
+    }
+    
+    setIsTransitioning(true);
+    
+    // Wait for slide-out animation to complete
+    setTimeout(() => {
+      setActiveTab(newTab);
+      setSlideDirection('slide-in');
+      
+      // Longer delay to ensure new content is positioned off-screen right
+      setTimeout(() => {
+        setSlideDirection('slide-in-animate');
+        
+        // End transition after slide-in completes
+        setTimeout(() => {
+          setIsTransitioning(false);
+          setSlideDirection('');
+        }, 400);
+      }, 100);
+    }, 400);
+  };
+
+  const handleVentSubmit = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    setLoading(true);
+    
+    // Show the message disappearing animation
+    try {
+      // Store the message for the disappearing animation
+      setVentingMessage(newMessage);
+      setIsVenting(true);
+      
+      // Clear the input immediately
+      setNewMessage('');
+      
+      // Start the disappearing animation
+      setTimeout(() => {
+        // Message starts fading
+        setIsVenting(false);
+        
+        // Complete cleanup after animation
+        setTimeout(() => {
+          setVentingMessage('');
+          setLoading(false);
+        }, 1500); // Match CSS animation duration
+      }, 500); // Brief pause before disappearing
+      
+    } catch (error) {
+      console.error('Error venting:', error);
+      setLoading(false);
+      setIsVenting(false);
+      setVentingMessage('');
+    }
+  };
+
   return (
     <div className="app">
-      <header className="header">
-        <h1>🪐 The Cheer Board</h1>
-        <p>Share a message to brighten someone's day!</p>
-      </header>
+      {activeTab === 'cheer' ? (
+        <>
+          <header className="header">
+            <h1>🪐 The Cheer Board</h1>
+            <p>Share a message to brighten someone's day!</p>
+          </header>
 
-      <div className="content">
+          <button 
+            className="tab-switch"
+            onClick={() => handleTabSwitch('vent')}
+            aria-label="Switch to vent tab"
+          >
+            💀
+          </button>
+        </>
+      ) : (
+        <>
+          <header className="header">
+            <h1>💀 The Vent Board</h1>
+            <p>Let it all out... this message will disappear after posting</p>
+          </header>
+
+          <button 
+            className="tab-switch"
+            onClick={() => handleTabSwitch('cheer')}
+            aria-label="Switch to cheer tab"
+          >
+            🪐
+          </button>
+        </>
+      )}
+
+      <div className={`content ${activeTab === 'vent' ? 'content-vent' : ''} ${isTransitioning ? 'content-transitioning' : ''} ${slideDirection ? `slide-${slideDirection}` : ''}`}>
         <main className="main">
-          <form onSubmit={handleSubmit} className="message-form">
-          <textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Write something uplifting..."
-            maxLength={280}
-            rows={3}
-            disabled={loading}
-          />
-          <div className="form-footer">
-            <span className="char-count">{newMessage.length}/280</span>
-            <button type="submit" disabled={loading || !newMessage.trim()}>
-              {loading ? 'Posting...' : 'Post Message'}
-            </button>
-          </div>
-        </form>
-
-        <div className="messages">
-          {messages.length === 0 ? (
-            <p className="no-messages">No messages yet. Be the first to spread some cheer!</p>
-          ) : (
-            messages.map((message) => (
-              <div 
-                key={message.id} 
-                className={`message message-${message.color || 'yellow'} ${newlyAddedIds.has(message.id) ? 'message-new' : ''}`}
-              >
-                <p className="message-content">{message.content}</p>
-                <div className="reactions">
-                  {['heart', 'star', 'plus', 'blessed'].map((reactionType) => {
-                    const reactionKey = `${message.id}-${reactionType}`;
-                    const hasReacted = userReactions.has(reactionKey);
-                    
-                    return (
-                      <button
-                        key={reactionType}
-                        className={`reaction-button ${hasReacted ? 'reaction-used' : ''}`}
-                        onClick={() => handleReaction(message.id, reactionType)}
-                        disabled={hasReacted}
-                      >
-                        <span className="reaction-emoji">{getReactionEmoji(reactionType)}</span>
-                        <span className="reaction-count">
-                          {message.reactions?.[reactionType] || 0}
-                        </span>
-                      </button>
-                    );
-                  })}
+          {activeTab === 'cheer' ? (
+            <>
+              <form onSubmit={handleSubmit} className="message-form">
+                <textarea
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Поделись радостью, поддержи или поблагодари коллег!"
+                  maxLength={280}
+                  rows={3}
+                  disabled={loading}
+                />
+                <div className="form-footer">
+                  <span className="char-count">{newMessage.length}/280</span>
+                  <button type="submit" disabled={loading || !newMessage.trim()}>
+                    {loading ? 'Posting...' : 'Запостить'}
+                  </button>
                 </div>
-                <small className="message-date">{formatDate(message.created_at)}</small>
+              </form>
+
+              <div className="messages">
+                {messages.length === 0 ? (
+                  <p className="no-messages">No messages yet. Be the first to spread some cheer!</p>
+                ) : (
+                  messages.map((message) => (
+                    <div 
+                      key={message.id} 
+                      className={`message message-${message.color || 'yellow'} ${newlyAddedIds.has(message.id) ? 'message-new' : ''}`}
+                    >
+                      <p className="message-content">{message.content}</p>
+                      <div className="reactions">
+                        {['heart', 'star', 'plus', 'blessed'].map((reactionType) => {
+                          const reactionKey = `${message.id}-${reactionType}`;
+                          const hasReacted = userReactions.has(reactionKey);
+                          
+                          return (
+                            <button
+                              key={reactionType}
+                              className={`reaction-button ${hasReacted ? 'reaction-used' : ''}`}
+                              onClick={() => handleReaction(message.id, reactionType)}
+                              disabled={hasReacted}
+                            >
+                              <span className="reaction-emoji">{getReactionEmoji(reactionType)}</span>
+                              <span className="reaction-count">
+                                {message.reactions?.[reactionType] || 0}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <small className="message-date">{formatDate(message.created_at)}</small>
+                    </div>
+                  ))
+                )}
               </div>
-            ))
+            </>
+          ) : (
+            <>
+              <form onSubmit={handleVentSubmit} className="message-form vent-form">
+                <textarea
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Выпусти пар - что тебя достало?"
+                  maxLength={280}
+                  rows={3}
+                  disabled={loading}
+                />
+                <div className="form-footer">
+                  <span className="char-count">{newMessage.length}/280</span>
+                  <button type="submit" disabled={loading || !newMessage.trim()}>
+                    {loading ? 'Отпускаю...' : 'Отпустить'}
+                  </button>
+                </div>
+              </form>
+
+              <div className="vent-area">
+                <p className="vent-message">Пусть твои переживания растворятся в темноте 🌌</p>
+              </div>
+            </>
           )}
-        </div>
         </main>
       </div>
+
+      {/* Disappearing message area - completely separate from main content */}
+      {activeTab === 'vent' && ventingMessage && (
+        <div className={`disappearing-message ${isVenting ? 'appearing' : 'disappearing'}`}>
+          {ventingMessage}
+        </div>
+      )}
       
       {showScrollToTop && (
         <button 

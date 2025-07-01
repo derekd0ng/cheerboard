@@ -168,6 +168,36 @@ app.post('/api/messages/:id/reactions', async (req, res) => {
   }
 });
 
+// Delete a message (for cleanup purposes)
+app.delete('/api/messages/:id', async (req, res) => {
+  const messageId = parseInt(req.params.id);
+  
+  try {
+    if (pool) {
+      // Database implementation
+      const result = await pool.query('DELETE FROM messages WHERE id = $1 RETURNING id', [messageId]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Message not found' });
+      }
+      // Also delete associated reactions
+      await pool.query('DELETE FROM reactions WHERE message_id = $1', [messageId]);
+      res.json({ message: 'Message deleted successfully' });
+    } else {
+      // In-memory storage
+      const messageIndex = messages.findIndex(m => m.id === messageId);
+      if (messageIndex === -1) {
+        return res.status(404).json({ error: 'Message not found' });
+      }
+      
+      messages.splice(messageIndex, 1);
+      res.json({ message: 'Message deleted successfully' });
+    }
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    res.status(500).json({ error: 'Failed to delete message' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
   console.log(`Database mode: ${pool ? 'enabled' : 'disabled (using in-memory storage)'}`);
