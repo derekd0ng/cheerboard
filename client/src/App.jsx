@@ -291,7 +291,7 @@ function App() {
 
               <div className="messages">
                 {messages.length === 0 ? (
-                  <p className="no-messages">No messages yet. Be the first to spread some cheer!</p>
+                  <p className="no-messages">Что-то пока все безрадостно...</p>
                 ) : (
                   messages.map((message) => (
                     <div 
